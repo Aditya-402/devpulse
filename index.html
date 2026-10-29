@@ -137,6 +137,34 @@
   .standup h2 { margin: 0 0 8px; font-size: 1rem; }
   .standup p { margin: 4px 0; }
   [hidden] { display: none !important; }
+
+  @media (max-width: 480px) {
+    body { padding: 16px; }
+    .error:empty { display: none; }
+    .card { padding: 14px; }
+    .standup { font-size: 0.9rem; }
+
+    #tag { flex: 1 1 100%; }
+    #minutes { width: auto; flex: 1 1 0; min-width: 0; }
+    input, form button { min-height: 44px; }
+
+    li:not(.editing) {
+      display: grid;
+      grid-template-columns: 28px auto 1fr 44px 44px;
+      align-items: center;
+      gap: 4px 8px;
+    }
+    li:not(.editing) .name { grid-column: 2 / -1; }
+    li:not(.editing) .chip { grid-column: 2; justify-self: start; }
+    li:not(.editing) .mins { grid-column: 3; }
+    li:not(.editing) .edit, li:not(.editing) .del {
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0;
+    }
+    li.editing .e-mins { flex: 1 1 0; width: auto; min-width: 0; }
+    li.editing button { min-height: 44px; }
+  }
 </style>
 </head>
 <body>
