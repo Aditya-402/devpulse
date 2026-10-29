@@ -283,7 +283,9 @@
     }
     $("count").textContent = todays.length;
     $("done-count").textContent = todays.filter(t => t.done).length;
-    $("total").textContent = fmt(todays.reduce((s, t) => s + t.minutes, 0));
+    const totalText = fmt(todays.reduce((s, t) => s + t.minutes, 0));
+    $("total").textContent = totalText;
+    document.title = `DevPulse - ${totalText}`;
 
     const dl = $("tags");
     dl.innerHTML = "";
