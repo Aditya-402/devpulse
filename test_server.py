@@ -63,6 +63,16 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(self.call("DELETE", "/api/tasks/" + t["id"])[0], 204)
         self.assertEqual(self.call("DELETE", "/api/tasks/" + t["id"])[0], 404)
 
+    def test_standup(self):
+        path = os.path.join(os.path.dirname(server.DATA_PATH), "standup.md")
+        if os.path.exists(path):
+            os.remove(path)
+        self.assertEqual(self.call("GET", "/api/standup"), (200, {"text": ""}))
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("**Yesterday:** x\n")
+        self.assertEqual(self.call("GET", "/api/standup"), (200, {"text": "**Yesterday:** x\n"}))
+
     def test_default_tag(self):
         s, t = self.call("POST", "/api/tasks", self.good(tag="  "))
         self.assertEqual((s, t["tag"]), (201, "general"))

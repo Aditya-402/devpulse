@@ -134,6 +134,8 @@
   .bar.zero { background: var(--border); }
   .bar-val { font-size: 0.7rem; color: var(--muted); text-align: center; margin-bottom: 4px; min-height: 2.4em; display: flex; align-items: flex-end; }
   .labels { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 6px; text-align: center; font-size: 0.8rem; color: var(--muted); }
+  .standup h2 { margin: 0 0 8px; font-size: 1rem; }
+  .standup p { margin: 4px 0; }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -150,6 +152,11 @@
   <p class="error" id="error" role="alert"></p>
 
   <section id="view-today">
+    <section class="card standup" id="standup" hidden>
+      <h2>Standup</h2>
+      <div id="standup-lines"></div>
+    </section>
+
     <form class="card" id="form">
       <input id="title" type="text" placeholder="What did you work on?" required maxlength="200" autocomplete="off">
       <input id="tag" type="text" placeholder="Tag (e.g. bugfix)" maxlength="30" list="tags" autocomplete="off">
@@ -200,6 +207,7 @@
   }
 
   let tasks = [];
+  let standup = "";
   let editingId = null;
 
   function showError(msg) { $("error").textContent = msg || ""; }
@@ -224,9 +232,27 @@
   async function refresh() {
     try {
       tasks = await api("GET", "/api/tasks");
+      standup = (await api("GET", "/api/standup")).text;
       showError("");
     } catch (e) { showError(e.message); }
     render();
+  }
+
+  // ---------- Standup ----------
+  // Lines look like "**Yesterday:** text"; shown with the label in bold.
+  function renderStandup() {
+    const lines = standup.split("\n").filter(l => l.trim());
+    $("standup").hidden = !lines.length;
+    $("standup-lines").replaceChildren(...lines.map(line => {
+      const p = document.createElement("p");
+      const m = line.match(/^\*\*(.+?)\*\*\s*(.*)$/);
+      if (m) {
+        const b = document.createElement("strong");
+        b.textContent = m[1];
+        p.append(b, " " + m[2]);
+      } else p.textContent = line;
+      return p;
+    }));
   }
 
   // ---------- Today ----------
@@ -405,6 +431,7 @@
 
   // ---------- Views ----------
   function render() {
+    renderStandup();
     renderToday();
     renderWeek();
   }

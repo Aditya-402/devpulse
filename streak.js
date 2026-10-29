@@ -21,12 +21,12 @@
   // Task dates are "YYYY-MM-DD" strings (local calendar days).
   function bestStreak(tasks) {
     const days = [...new Set(tasks.map(t => t.date))].sort();
-    let best = 0, run = 0, prev = null;
+    let best = 0, run = 0, expected = null;
     for (const day of days) {
-      const [y, m, d] = prev ? prev.split("-").map(Number) : [];
-      run = prev && ymd(new Date(y, m - 1, d + 1)) === day ? run + 1 : 1;
+      run = day === expected ? run + 1 : 1;
       best = Math.max(best, run);
-      prev = day;
+      const [y, m, d] = day.split("-").map(Number);
+      expected = ymd(new Date(y, m - 1, d + 1));
     }
     return best;
   }

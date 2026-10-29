@@ -50,6 +50,15 @@ def load_tasks():
         return []
 
 
+def load_standup():
+    """Text of standup.md (next to tasks.json), or "" if it hasn't been written."""
+    try:
+        with open(os.path.join(os.path.dirname(DATA_PATH), "standup.md"), "r", encoding="utf-8") as f:
+            return f.read()
+    except (FileNotFoundError, UnicodeDecodeError):
+        return ""
+
+
 def save_tasks(tasks):
     os.makedirs(os.path.dirname(DATA_PATH), exist_ok=True)
     tmp = DATA_PATH + ".tmp"
@@ -183,6 +192,8 @@ class Handler(BaseHTTPRequestHandler):
         elif url.path == "/streak.js":
             with open(STREAK_PATH, "rb") as f:
                 self._send(200, f.read(), "text/javascript; charset=utf-8")
+        elif url.path == "/api/standup":
+            self._send(200, {"text": load_standup()})
         elif url.path == "/api/tasks":
             q = parse_qs(url.query)
             start = q.get("from", [None])[0]
