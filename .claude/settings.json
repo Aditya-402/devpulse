@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -Command \"[console]::Beep(880,300)\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c 'import json,sys; p=json.load(sys.stdin)[\"tool_input\"][\"file_path\"].replace(\"\\\\\",\"/\"); sys.exit(0 if p.endswith(\"data/tasks.json\") else 1)' && { python -m json.tool data/tasks.json >/dev/null || exit 2; }; exit 0",
+            "statusMessage": "Validating data/tasks.json"
+          }
+        ]
+      }
+    ]
+  }
+}
