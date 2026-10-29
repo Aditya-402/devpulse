@@ -15,6 +15,7 @@ from urllib.parse import parse_qs, urlparse
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INDEX_PATH = os.path.join(BASE_DIR, "index.html")
+STREAK_PATH = os.path.join(BASE_DIR, "streak.js")
 DATA_PATH = os.environ.get("DEVPULSE_DATA", os.path.join(BASE_DIR, "data", "tasks.json"))
 MAX_BODY = 10 * 1024
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -179,6 +180,9 @@ class Handler(BaseHTTPRequestHandler):
         if url.path in ("/", "/index.html"):
             with open(INDEX_PATH, "rb") as f:
                 self._send(200, f.read(), "text/html; charset=utf-8")
+        elif url.path == "/streak.js":
+            with open(STREAK_PATH, "rb") as f:
+                self._send(200, f.read(), "text/javascript; charset=utf-8")
         elif url.path == "/api/tasks":
             q = parse_qs(url.query)
             start = q.get("from", [None])[0]

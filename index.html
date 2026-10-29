@@ -127,6 +127,7 @@
   .streak { display: flex; align-items: baseline; gap: 10px; }
   .streak .num { font-size: 2.4rem; font-weight: 700; color: var(--accent); }
   .streak .hint { color: var(--muted); font-size: 0.9rem; }
+  .best { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
   .bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 170px; }
   .bar-col { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; min-width: 0; }
   .bar { width: 100%; max-width: 40px; background: var(--accent); border-radius: 6px 6px 0 0; min-height: 2px; opacity: 0.9; }
@@ -172,6 +173,7 @@
         <span class="num" id="streak">0</span>
         <span><strong id="streak-label">day streak</strong><br><span class="hint" id="streak-hint"></span></span>
       </div>
+      <p class="best">Best streak: <strong id="best-streak">0 days</strong></p>
     </div>
     <div class="card">
       <div class="summary">
@@ -184,9 +186,10 @@
   </section>
 </main>
 
+<script src="/streak.js"></script>
 <script>
   const $ = id => document.getElementById(id);
-  const ymd = d => d.toLocaleDateString("en-CA"); // YYYY-MM-DD, local time
+  const { ymd, computeStreak, bestStreak } = DevPulseStreak;
   const today = () => ymd(new Date());
 
   // 90 -> "1 h 30 min", 60 -> "1 h", 45 -> "45 min", 0 -> "0 min"
@@ -391,17 +394,9 @@
     }
     $("week-total").textContent = fmt(days.reduce((s, d) => s + d.minutes, 0));
 
-    // Streak: consecutive days with >= 1 task, counted back from today
-    // (or from yesterday if nothing is logged yet today).
-    const withTasks = new Set(tasks.map(t => t.date));
-    const cursor = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const todayEmpty = !withTasks.has(ymd(cursor));
-    if (todayEmpty) cursor.setDate(cursor.getDate() - 1);
-    let streak = 0;
-    while (withTasks.has(ymd(cursor))) {
-      streak++;
-      cursor.setDate(cursor.getDate() - 1);
-    }
+    const { streak, todayEmpty } = computeStreak(tasks, now);
+    const best = Math.max(bestStreak(tasks), streak);
+    $("best-streak").textContent = best === 1 ? "1 day" : `${best} days`;
     $("streak").textContent = streak;
     $("streak-hint").textContent = streak && todayEmpty
       ? "Log a task today to keep it going."
