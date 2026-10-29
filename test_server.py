@@ -109,6 +109,17 @@ class ServerTest(unittest.TestCase):
         _, tasks = self.call("GET", "/api/tasks")
         self.assertEqual(next(x for x in tasks if x["id"] == t["id"])["title"], "New")
 
+    def test_negative_content_length(self):
+        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        c.putrequest("POST", "/api/tasks")
+        c.putheader("Content-Type", "application/json")
+        c.putheader("Content-Length", "-1")
+        c.endheaders()
+        r = c.getresponse()
+        self.assertEqual(r.status, 400)
+        r.read()
+        c.close()
+
     def test_corrupt_file_is_kept(self):
         os.makedirs(os.path.dirname(server.DATA_PATH), exist_ok=True)
         with open(server.DATA_PATH, "w") as f:

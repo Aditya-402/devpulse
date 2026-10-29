@@ -156,6 +156,8 @@ class Handler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", "0"))
         except ValueError:
             raise ApiError(400, "Bad Content-Length")
+        if length < 0:
+            raise ApiError(400, "Bad Content-Length")
         if length > MAX_BODY:
             raise ApiError(413, "Body too large")
         raw = self.rfile.read(length) if length else b""
