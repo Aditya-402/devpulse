@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DevPulse</title>
+<style>
+  :root {
+    --bg: #f5f6fa;
+    --card: #ffffff;
+    --text: #1d2433;
+    --muted: #6b7385;
+    --accent: #4f46e5;
+    --border: #dfe3ec;
+    --danger: #d64545;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12141c;
+      --card: #1b1e29;
+      --text: #e8eaf2;
+      --muted: #8c93a8;
+      --accent: #818cf8;
+      --border: #2c3040;
+      --danger: #f07178;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 560px; margin: 0 auto; }
+  h1 { margin: 0; font-size: 1.8rem; }
+  .date { color: var(--muted); margin: 4px 0 16px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab {
+    background: var(--card);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .tab[aria-selected="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  form { display: flex; gap: 8px; flex-wrap: wrap; }
+  input {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  #title { flex: 1 1 100%; }
+  #tag { flex: 1 1 120px; min-width: 0; }
+  #minutes { width: 100px; }
+  button {
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:focus-visible, input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .summary {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    margin-bottom: 8px;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  .summary strong { color: var(--text); }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+  }
+  li:first-child { border-top: 0; }
+  li.done .name { text-decoration: line-through; color: var(--muted); }
+  li input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+  .name { flex: 1; word-break: break-word; }
+  .chip {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .mins { color: var(--muted); white-space: nowrap; }
+  .del {
+    background: none;
+    color: var(--danger);
+    padding: 4px 8px;
+    font-size: 1.1rem;
+  }
+  .edit, .cancel {
+    background: none;
+    color: var(--muted);
+    padding: 4px 8px;
+    font-size: 1.1rem;
+  }
+  .cancel { font-size: 1rem; }
+  li.editing { flex-wrap: wrap; }
+  li.editing input[type="text"] { flex: 1 1 100%; min-width: 0; }
+  li.editing .e-tag { flex: 1 1 120px; }
+  li.editing .e-mins { width: 100px; }
+  .empty { color: var(--muted); text-align: center; padding: 12px 0; }
+  .error { color: var(--danger); margin: 0 0 12px; min-height: 1.2em; }
+  .streak { display: flex; align-items: baseline; gap: 10px; }
+  .streak .num { font-size: 2.4rem; font-weight: 700; color: var(--accent); }
+  .streak .hint { color: var(--muted); font-size: 0.9rem; }
+  .bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 170px; }
+  .bar-col { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; min-width: 0; }
+  .bar { width: 100%; max-width: 40px; background: var(--accent); border-radius: 6px 6px 0 0; min-height: 2px; opacity: 0.9; }
+  .bar.zero { background: var(--border); }
+  .bar-val { font-size: 0.7rem; color: var(--muted); text-align: center; margin-bottom: 4px; min-height: 2.4em; display: flex; align-items: flex-end; }
+  .labels { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 6px; text-align: center; font-size: 0.8rem; color: var(--muted); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>DevPulse</h1>
+  <p class="date" id="date"></p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" id="tab-today" role="tab" type="button" aria-selected="true">Today</button>
+    <button class="tab" id="tab-week" role="tab" type="button" aria-selected="false">Week</button>
+  </div>
+
+  <p class="error" id="error" role="alert"></p>
+
+  <section id="view-today">
+    <form class="card" id="form">
+      <input id="title" type="text" placeholder="What did you work on?" required maxlength="200" autocomplete="off">
+      <input id="tag" type="text" placeholder="Tag (e.g. bugfix)" maxlength="30" list="tags" autocomplete="off">
+      <datalist id="tags"></datalist>
+      <input id="minutes" type="number" placeholder="Minutes" min="1" max="1440" required>
+      <button type="submit">Add</button>
+    </form>
+
+    <section class="card">
+      <div class="summary">
+        <span><strong id="count">0</strong> tasks, <strong id="done-count">0</strong> done</span>
+        <span>Total: <strong id="total">0 min</strong></span>
+      </div>
+      <ul id="list"></ul>
+    </section>
+  </section>
+
+  <section id="view-week" hidden>
+    <div class="card">
+      <div class="streak">
+        <span class="num" id="streak">0</span>
+        <span><strong id="streak-label">day streak</strong><br><span class="hint" id="streak-hint"></span></span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="summary">
+        <span>Last 7 days</span>
+        <span>Total: <strong id="week-total">0 min</strong></span>
+      </div>
+      <div class="bars" id="bars"></div>
+      <div class="labels" id="labels"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const ymd = d => d.toLocaleDateString("en-CA"); // YYYY-MM-DD, local time
+  const today = () => ymd(new Date());
+
+  // 90 -> "1 h 30 min", 60 -> "1 h", 45 -> "45 min", 0 -> "0 min"
+  function fmt(m) {
+    const h = Math.floor(m / 60), r = m % 60;
+    if (!h) return `${r} min`;
+    return r ? `${h} h ${r} min` : `${h} h`;
+  }
+
+  let tasks = [];
+  let editingId = null;
+
+  function showError(msg) { $("error").textContent = msg || ""; }
+
+  async function api(method, path, body) {
+    let res;
+    try {
+      res = await fetch(path, {
+        method,
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch {
+      throw new Error("Can't reach the DevPulse server.");
+    }
+    if (res.status === 204) return null;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+    return data;
+  }
+
+  async function refresh() {
+    try {
+      tasks = await api("GET", "/api/tasks");
+      showError("");
+    } catch (e) { showError(e.message); }
+    render();
+  }
+
+  // ---------- Today ----------
+  function renderToday() {
+    const list = $("list");
+    const todays = tasks.filter(t => t.date === today());
+    list.innerHTML = "";
+    if (!todays.length) {
+      const li = document.createElement("li");
+      li.className = "empty";
+      li.textContent = "Nothing logged yet today.";
+      list.appendChild(li);
+    }
+    for (const t of todays) {
+      const li = document.createElement("li");
+      if (t.id === editingId) {
+        renderEditRow(li, t);
+        list.appendChild(li);
+        continue;
+      }
+      if (t.done) li.className = "done";
+
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.checked = t.done;
+      box.setAttribute("aria-label", "Mark done");
+      box.onchange = () => act(() => api("PATCH", `/api/tasks/${t.id}`, { done: box.checked }));
+
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = t.title;
+
+      const chip = document.createElement("span");
+      chip.className = "chip";
+      chip.textContent = t.tag;
+
+      const mins = document.createElement("span");
+      mins.className = "mins";
+      mins.textContent = fmt(t.minutes);
+
+      const edit = document.createElement("button");
+      edit.className = "edit";
+      edit.type = "button";
+      edit.textContent = "✎";
+      edit.setAttribute("aria-label", "Edit task");
+      edit.onclick = () => { editingId = t.id; renderToday(); };
+
+      const del = document.createElement("button");
+      del.className = "del";
+      del.type = "button";
+      del.textContent = "✕";
+      del.setAttribute("aria-label", "Delete task");
+      del.onclick = () => act(() => api("DELETE", `/api/tasks/${t.id}`));
+
+      li.append(box, name, chip, mins, edit, del);
+      list.appendChild(li);
+    }
+    $("count").textContent = todays.length;
+    $("done-count").textContent = todays.filter(t => t.done).length;
+    $("total").textContent = fmt(todays.reduce((s, t) => s + t.minutes, 0));
+
+    const dl = $("tags");
+    dl.innerHTML = "";
+    for (const tag of [...new Set(tasks.map(t => t.tag))].sort()) {
+      const o = document.createElement("option");
+      o.value = tag;
+      dl.appendChild(o);
+    }
+  }
+
+  function renderEditRow(li, t) {
+    li.className = "editing";
+    const title = document.createElement("input");
+    title.type = "text";
+    title.value = t.title;
+    title.maxLength = 200;
+    title.required = true;
+    title.setAttribute("aria-label", "Title");
+
+    const tag = document.createElement("input");
+    tag.type = "text";
+    tag.className = "e-tag";
+    tag.value = t.tag;
+    tag.maxLength = 30;
+    tag.setAttribute("aria-label", "Tag");
+
+    const mins = document.createElement("input");
+    mins.type = "number";
+    mins.className = "e-mins";
+    mins.value = t.minutes;
+    mins.min = 1;
+    mins.max = 1440;
+    mins.required = true;
+    mins.setAttribute("aria-label", "Minutes");
+
+    const save = document.createElement("button");
+    save.type = "button";
+    save.textContent = "Save";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "cancel";
+    cancel.textContent = "Cancel";
+
+    const close = () => { editingId = null; renderToday(); };
+    const submit = () => {
+      const minutes = parseInt(mins.value, 10);
+      const newTitle = title.value.trim();
+      if (!newTitle || !(minutes > 0)) return;
+      act(async () => {
+        await api("PATCH", `/api/tasks/${t.id}`, { title: newTitle, tag: tag.value, minutes });
+        editingId = null;
+      });
+    };
+    save.onclick = submit;
+    cancel.onclick = close;
+    li.onkeydown = ev => {
+      if (ev.key === "Enter") { ev.preventDefault(); submit(); }
+      else if (ev.key === "Escape") close();
+    };
+    li.append(title, tag, mins, save, cancel);
+    setTimeout(() => title.focus(), 0);
+  }
+
+  async function act(fn) {
+    try { await fn(); showError(""); } catch (e) { showError(e.message); }
+    await refresh();
+  }
+
+  // ---------- Week ----------
+  function renderWeek() {
+    const days = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      days.push({ key: ymd(d), label: d.toLocaleDateString(undefined, { weekday: "short" }), minutes: 0 });
+    }
+    const byKey = new Map(days.map(d => [d.key, d]));
+    for (const t of tasks) {
+      const d = byKey.get(t.date);
+      if (d) d.minutes += t.minutes;
+    }
+    const max = Math.max(...days.map(d => d.minutes), 1);
+
+    const bars = $("bars"), labels = $("labels");
+    bars.innerHTML = "";
+    labels.innerHTML = "";
+    for (const d of days) {
+      const col = document.createElement("div");
+      col.className = "bar-col";
+      const val = document.createElement("div");
+      val.className = "bar-val";
+      val.textContent = d.minutes ? fmt(d.minutes) : "";
+      const bar = document.createElement("div");
+      bar.className = "bar" + (d.minutes ? "" : " zero");
+      bar.style.height = `${(d.minutes / max) * 100}%`;
+      bar.title = `${d.key}: ${fmt(d.minutes)}`;
+      col.append(val, bar);
+      bars.appendChild(col);
+
+      const l = document.createElement("div");
+      l.textContent = d.label;
+      labels.appendChild(l);
+    }
+    $("week-total").textContent = fmt(days.reduce((s, d) => s + d.minutes, 0));
+
+    // Streak: consecutive days with >= 1 task, counted back from today
+    // (or from yesterday if nothing is logged yet today).
+    const withTasks = new Set(tasks.map(t => t.date));
+    const cursor = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEmpty = !withTasks.has(ymd(cursor));
+    if (todayEmpty) cursor.setDate(cursor.getDate() - 1);
+    let streak = 0;
+    while (withTasks.has(ymd(cursor))) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    $("streak").textContent = streak;
+    $("streak-hint").textContent = streak && todayEmpty
+      ? "Log a task today to keep it going."
+      : streak ? "" : "Log a task to start a streak.";
+  }
+
+  // ---------- Views ----------
+  function render() {
+    renderToday();
+    renderWeek();
+  }
+
+  function showView(name) {
+    const week = name === "week";
+    $("view-today").hidden = week;
+    $("view-week").hidden = !week;
+    $("tab-today").setAttribute("aria-selected", String(!week));
+    $("tab-week").setAttribute("aria-selected", String(week));
+    if (location.hash !== "#" + name) history.replaceState(null, "", "#" + name);
+  }
+  $("tab-today").onclick = () => showView("today");
+  $("tab-week").onclick = () => showView("week");
+
+  $("form").addEventListener("submit", ev => {
+    ev.preventDefault();
+    const minutes = parseInt($("minutes").value, 10);
+    const title = $("title").value.trim();
+    if (!title || !(minutes > 0)) return;
+    act(async () => {
+      await api("POST", "/api/tasks", { title, tag: $("tag").value, minutes, date: today() });
+      $("form").reset();
+      $("title").focus();
+    });
+  });
+
+  $("date").textContent =
+    new Date().toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  showView(location.hash === "#week" ? "week" : "today");
+  refresh();
+</script>
+</body>
+</html>
